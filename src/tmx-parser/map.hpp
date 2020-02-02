@@ -1,0 +1,38 @@
+#ifndef TMX_PARSER_MAP_HPP
+#define TMX_PARSER_MAP_HPP
+
+#include <SFML/Graphics.hpp>
+#include <iostream>
+#include <string>
+#include <tinyxml2.h>
+#include <vector>
+
+#include "layer.hpp"
+#include "tileset.hpp"
+
+namespace tmx
+{
+class Map
+{
+    public:
+	Map() {}
+	explicit Map(const std::string &basePath, const std::string &filename);
+
+	double version;
+	std::string orientation;
+	std::string renderOrder;
+
+	unsigned int width;
+	unsigned int height;
+	unsigned int tileWidth;
+	unsigned int tileHeight;
+
+	std::vector<Layer> layers;
+	std::vector<Tileset> tilesets;
+
+	void draw(sf::RenderWindow &window, sf::Time deltaTime);
+	void update(sf::Time deltaTime);
+};
+} // namespace tmx
+
+#endif

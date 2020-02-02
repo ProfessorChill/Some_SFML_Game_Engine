@@ -1,0 +1,197 @@
+[
+ {
+  "directory": "/home/lunakiraizarus/Projects/cpp/sfml-c11-test/build",
+  "arguments": [
+   "g++",
+   "-Wall",
+   "-std=c++17",
+   "-g",
+   "-O0",
+   "-I../src/include",
+   "-MM",
+   "../src/texture_manager.cpp",
+   "obj/texture_manager.d"
+  ],
+  "file": "../src/texture_manager.cpp"
+ },
+ {
+  "directory": "/home/lunakiraizarus/Projects/cpp/sfml-c11-test/build",
+  "arguments": [
+   "g++",
+   "-Wall",
+   "-std=c++17",
+   "-g",
+   "-O0",
+   "-I../src/include",
+   "-MM",
+   "../src/lua_interpreter.cpp",
+   "obj/lua_interpreter.d"
+  ],
+  "file": "../src/lua_interpreter.cpp"
+ },
+ {
+  "directory": "/home/lunakiraizarus/Projects/cpp/sfml-c11-test/build",
+  "arguments": [
+   "g++",
+   "-Wall",
+   "-std=c++17",
+   "-g",
+   "-O0",
+   "-I../src/include",
+   "-MM",
+   "../src/particle.cpp",
+   "obj/particle.d"
+  ],
+  "file": "../src/particle.cpp"
+ },
+ {
+  "directory": "/home/lunakiraizarus/Projects/cpp/sfml-c11-test/build",
+  "arguments": [
+   "g++",
+   "-Wall",
+   "-std=c++17",
+   "-g",
+   "-O0",
+   "-I../src/include",
+   "-MM",
+   "../src/entity-handler.cpp",
+   "obj/entity-handler.d"
+  ],
+  "file": "../src/entity-handler.cpp"
+ },
+ {
+  "directory": "/home/lunakiraizarus/Projects/cpp/sfml-c11-test/build",
+  "arguments": [
+   "g++",
+   "-Wall",
+   "-std=c++17",
+   "-g",
+   "-O0",
+   "-I../src/include",
+   "-MM",
+   "../src/animated-sprite.cpp",
+   "obj/animated-sprite.d"
+  ],
+  "file": "../src/animated-sprite.cpp"
+ },
+ {
+  "directory": "/home/lunakiraizarus/Projects/cpp/sfml-c11-test/build",
+  "arguments": [
+   "g++",
+   "-Wall",
+   "-std=c++17",
+   "-g",
+   "-O0",
+   "-I../src/include",
+   "-MM",
+   "../src/main.cpp",
+   "obj/main.d"
+  ],
+  "file": "../src/main.cpp"
+ },
+ {
+  "directory": "/home/lunakiraizarus/Projects/cpp/sfml-c11-test/build",
+  "arguments": [
+   "g++",
+   "-Wall",
+   "-std=c++17",
+   "-g",
+   "-O0",
+   "-I../src/include",
+   "-MM",
+   "../src/entity.cpp",
+   "obj/entity.d"
+  ],
+  "file": "../src/entity.cpp"
+ },
+ {
+  "directory": "/home/lunakiraizarus/Projects/cpp/sfml-c11-test/build",
+  "arguments": [
+   "g++",
+   "-Wall",
+   "-std=c++17",
+   "-g",
+   "-O0",
+   "-I../src/include",
+   "-MM",
+   "../src/game_states/game_state_start.cpp",
+   "obj/game_states/game_state_start.d"
+  ],
+  "file": "../src/game_states/game_state_start.cpp"
+ },
+ {
+  "directory": "/home/lunakiraizarus/Projects/cpp/sfml-c11-test/build",
+  "arguments": [
+   "g++",
+   "-Wall",
+   "-std=c++17",
+   "-g",
+   "-O0",
+   "-I../src/include",
+   "-MM",
+   "../src/animation.cpp",
+   "obj/animation.d"
+  ],
+  "file": "../src/animation.cpp"
+ },
+ {
+  "directory": "/home/lunakiraizarus/Projects/cpp/sfml-c11-test/build",
+  "arguments": [
+   "g++",
+   "-Wall",
+   "-std=c++17",
+   "-g",
+   "-O0",
+   "-I../src/include",
+   "-MM",
+   "../src/tmx-parser/tileset.cpp",
+   "obj/tmx-parser/tileset.d"
+  ],
+  "file": "../src/tmx-parser/tileset.cpp"
+ },
+ {
+  "directory": "/home/lunakiraizarus/Projects/cpp/sfml-c11-test/build",
+  "arguments": [
+   "g++",
+   "-Wall",
+   "-std=c++17",
+   "-g",
+   "-O0",
+   "-I../src/include",
+   "-MM",
+   "../src/tmx-parser/map.cpp",
+   "obj/tmx-parser/map.d"
+  ],
+  "file": "../src/tmx-parser/map.cpp"
+ },
+ {
+  "directory": "/home/lunakiraizarus/Projects/cpp/sfml-c11-test/build",
+  "arguments": [
+   "g++",
+   "-Wall",
+   "-std=c++17",
+   "-g",
+   "-O0",
+   "-I../src/include",
+   "-MM",
+   "../src/tmx-parser/layer.cpp",
+   "obj/tmx-parser/layer.d"
+  ],
+  "file": "../src/tmx-parser/layer.cpp"
+ },
+ {
+  "directory": "/home/lunakiraizarus/Projects/cpp/sfml-c11-test/build",
+  "arguments": [
+   "g++",
+   "-Wall",
+   "-std=c++17",
+   "-g",
+   "-O0",
+   "-I../src/include",
+   "-MM",
+   "../src/game.cpp",
+   "obj/game.d"
+  ],
+  "file": "../src/game.cpp"
+ }
+]
