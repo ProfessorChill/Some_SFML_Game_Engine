@@ -38,5 +38,5 @@
 # End of https://www.gitignore.io/api/c++
 
 *.plist
-/build/obj/
-/build/bin/
+build/obj/
+build/bin/
