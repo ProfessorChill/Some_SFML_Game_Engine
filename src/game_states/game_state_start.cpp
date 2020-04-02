@@ -1,9 +1,12 @@
 #include "game_state_start.hpp"
 
-GameStateStart::GameStateStart(Game *game)
+GameStateStart::GameStateStart(Game *game) : mEntities(ecs::MAX_ENTITIES - 1)
 {
 	// Initialize the game reference
 	this->game = game;
+
+	// Initialize the ECS
+	mCoordinator.init();
 
 	// Initialize the map
 	this->map = tmx::Map(this->game->selfLocation.string(),
@@ -32,15 +35,6 @@ GameStateStart::GameStateStart(Game *game)
 
 	// Handle the lua state
 	this->lua.open_libraries(sol::lib::base, sol::lib::package);
-
-	sol::usertype<Game> gameType =
-	    this->lua.new_usertype<Game>("Game", sol::constructors<Game()>());
-
-	gameType["states"] = &Game::states;
-	gameType["pushState"] = &Game::pushState;
-	gameType["popState"] = &Game::popState;
-	gameType["changeState"] = &Game::changeState;
-	gameType["peekState"] = &Game::peekState;
 
 	sol::usertype<EntityHandler> entityHandlerType =
 	    this->lua.new_usertype<EntityHandler>(
@@ -86,17 +80,41 @@ GameStateStart::GameStateStart(Game *game)
 			      "/resources/scripts/test.lua");
 
 	std::cout << "Initialized LUA\n";
+
+	// Set the initial controlled entity.
+	this->controlledEntity = this->entityHandler.getEntityById(0);
 }
 
 void GameStateStart::draw(const sf::Time deltaTime)
 {
-	this->game->window.clear(sf::Color::Black);
+	// Store the temporary ID of the controlled ID
+	// This is a janky fix until I change the code to use shared_ptr
+	unsigned int tempId = this->controlledEntity->id;
 
+	// Get viewport to rect.
+	sf::Vector2f viewportTopLeft = this->game->window.mapPixelToCoords(
+	    sf::Vector2i(0, 0), this->gameView);
+	sf::Vector2f viewportSize = this->game->window.getView().getSize();
+	sf::FloatRect viewport(viewportTopLeft.x, viewportTopLeft.y,
+			       viewportSize.x, viewportSize.y);
+
+	// Clear the window and set the view for drawing
+	this->game->window.clear(sf::Color::Black);
 	this->game->window.setView(this->gameView);
 
 	this->map.draw(this->game->window, deltaTime);
 
-	this->entityHandler.draw(this->game->window, deltaTime);
+	this->entityHandler.draw(this->game->window, deltaTime, viewport);
+	/*
+	std::vector<Entity *> visibleEntities =
+	    this->entityHandler.getEntitiesInRegion(viewport);
+	for (Entity *entity : visibleEntities) {
+		entity->draw(this->game->window, deltaTime);
+	}
+	*/
+
+	// Set the controlled entity to that temp ID, again, janky fix.
+	this->controlledEntity = this->entityHandler.getEntityById(tempId);
 }
 
 void GameStateStart::update(const sf::Time deltaTime)
@@ -104,39 +122,6 @@ void GameStateStart::update(const sf::Time deltaTime)
 	// float dt = deltaTime.asSeconds();
 
 	this->entityHandler.update(deltaTime);
-
-	// Handle collision
-	Entity *controlledEntity = this->entityHandler.getEntityById(0);
-	size_t entitiesLen = this->entityHandler.getEntityCount();
-
-	for (size_t i = 0; i < entitiesLen; i++) {
-		if (i == 0) { // If the entity is the controlled entity
-			continue;
-		}
-
-		Entity *queryEntity = this->entityHandler.getEntityById(i);
-
-		if (queryEntity->collRect.intersects(
-			controlledEntity->collRect)) {
-			controlledEntity->pos = controlledEntity->lastPos;
-
-			/* Testing bottom position movement */
-			controlledEntity->pos.y =
-			    queryEntity->collRect.top +
-			    controlledEntity->collRect.height;
-			controlledEntity->vel.y = 0.f;
-			/* End testing */
-
-			std::cout
-			    << "Player Top: " << controlledEntity->collRect.top
-			    << " Entity Bottom: "
-			    << queryEntity->collRect.top +
-				   queryEntity->collRect.height
-			    << " Rect Size: "
-			    << sizeof(controlledEntity->collRect) << "\n";
-			break;
-		}
-	}
 
 	// Set the view to the controlled entity
 	this->gameView.setCenter(controlledEntity->pos);
@@ -148,41 +133,35 @@ void GameStateStart::handleInput()
 
 	while (this->game->window.pollEvent(event)) {
 		switch (event.type) {
-		case sf::Event::Closed: {
-			this->game->window.close();
-
-			break;
-		}
-
-		case sf::Event::Resized: {
-			this->gameView.setSize(event.size.width,
-					       event.size.height);
-
-			break;
-		}
-
-		case sf::Event::KeyPressed: {
-			if (event.key.code == sf::Keyboard::Escape) {
+			case sf::Event::Closed: {
 				this->game->window.close();
+
+				break;
 			}
 
-			Entity *controlledEntity =
-			    this->entityHandler.getEntityById(0);
-			controlledEntity->keyPress(event.key.code);
+			case sf::Event::Resized: {
+				this->gameView.setSize(event.size.width,
+						       event.size.height);
 
-			break;
-		}
+				break;
+			}
 
-		case sf::Event::KeyReleased: {
-			Entity *controlledEntity =
-			    this->entityHandler.getEntityById(0);
-			controlledEntity->keyRelease(event.key.code);
+			case sf::Event::KeyPressed: {
+				if (event.key.code == sf::Keyboard::Escape) {
+					this->game->window.close();
+				}
 
-			break;
-		}
+				controlledEntity->keyPress(event.key.code);
+				break;
+			}
 
-		default:
-			break;
+			case sf::Event::KeyReleased: {
+				controlledEntity->keyRelease(event.key.code);
+				break;
+			}
+
+			default:
+				break;
 		}
 	}
 }

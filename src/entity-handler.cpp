@@ -1,11 +1,26 @@
 #include "entity-handler.hpp"
 
-void EntityHandler::draw(sf::RenderWindow &window, const sf::Time deltaTime)
+struct EntityComparator {
+	bool operator()(Entity *entity1, Entity *entity2)
+	{
+		if (entity1->pos.y == entity2->pos.y) {
+			return entity1 < entity2;
+		}
+
+		return entity1->pos.y < entity2->pos.y;
+	}
+};
+
+void EntityHandler::draw(sf::RenderWindow &window, const sf::Time deltaTime,
+			 sf::FloatRect region)
 {
 	// Calls draw for all entities in the entity list
+	this->visibleEntities = getEntitiesInRegion(region);
+	std::sort(visibleEntities.begin(), visibleEntities.end(),
+		  EntityComparator());
 
-	for (Entity &entity : this->entities) {
-		entity.draw(window, deltaTime);
+	for (Entity *entity : visibleEntities) {
+		entity->draw(window, deltaTime);
 	}
 }
 
@@ -13,8 +28,16 @@ void EntityHandler::update(const sf::Time deltaTime)
 {
 	// Calls update for all entities in the entity list
 
-	for (Entity &entity : this->entities) {
-		entity.update(deltaTime);
+	for (Entity *entity : this->visibleEntities) {
+		for (Entity *entityCheck : this->visibleEntities) {
+			if (entity == entityCheck) {
+				continue;
+			}
+
+			entity->checkCollision(entityCheck);
+		}
+
+		entity->update(deltaTime);
 	}
 }
 
@@ -44,9 +67,28 @@ void EntityHandler::removeEntity(unsigned int entity)
 	this->entities.erase(this->entities.begin() + entity);
 }
 
-Entity *EntityHandler::getEntityById(unsigned int entity)
+Entity *EntityHandler::getEntityById(unsigned int entityId)
 {
-	return &this->entities[entity];
+	for (Entity &entity : this->entities) {
+		if (entity.id == entityId) {
+			return &entity;
+		}
+	}
+
+	return nullptr;
+}
+
+std::vector<Entity *> EntityHandler::getEntitiesInRegion(sf::FloatRect region)
+{
+	std::vector<Entity *> entityMatches;
+
+	for (Entity &entity : this->entities) {
+		if (region.contains(entity.pos.x, entity.pos.y)) {
+			entityMatches.push_back(&entity);
+		}
+	}
+
+	return entityMatches;
 }
 
 size_t EntityHandler::getEntityCount()

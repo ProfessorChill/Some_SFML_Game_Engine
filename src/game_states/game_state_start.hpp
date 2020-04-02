@@ -6,7 +6,9 @@
 #include <map>
 #include <sol/sol.hpp>
 #include <string>
+#include <vector>
 
+#include "../ecs.hpp"
 #include "../entity-handler.hpp"
 #include "../entity.hpp"
 #include "../game.hpp"
@@ -17,25 +19,31 @@
 
 class GameStateStart : public GameState
 {
-    public:
-	explicit GameStateStart(Game *game);
+public:
+	GameStateStart(Game *game);
 
 	virtual void draw(const sf::Time deltaTime);
 	virtual void update(const sf::Time deltaTime);
 	virtual void handleInput();
 
 	EntityHandler entityHandler;
+	Entity *controlledEntity;
 	std::vector<ParticleSystem *> particleSystems;
 
 	sol::state lua;
 
 	TextureManager texmgr;
 
-    private:
+	Game *game;
+
+private:
 	void loadTextures();
 
 	sf::View gameView;
 	tmx::Map map;
+
+	ecs::Coordinator mCoordinator;
+	std::vector<ecs::Entity> mEntities;
 };
 
 #endif

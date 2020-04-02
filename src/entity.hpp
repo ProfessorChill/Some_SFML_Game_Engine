@@ -1,46 +1,48 @@
 #ifndef ENTITY_HPP
 #define ENTITY_HPP
 
+#include <Box2D/Box2D.h>
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/Transformable.hpp>
+#include <algorithm>
 #include <iostream>
 #include <map>
+#include <math.h>
 #include <string>
 #include <vector>
 
 #include "animated-sprite.hpp"
+#include "movement.hpp"
 
-class Entity : sf::Transformable
+enum Direction {
+	UP,
+	RIGHT,
+	DOWN,
+	LEFT,
+};
+
+class Entity : sf::Transformable, Movement
 {
     public:
 	Entity() {}
 	explicit Entity(sf::Texture *texture, unsigned int id);
 	bool operator==(const Entity &rhs) { return this->id == rhs.id; }
 	bool operator==(const Entity *rhs) { return this->id == rhs->id; }
+	bool operator<(const Entity &rhs) const { return this->id < rhs.id; }
 
 	unsigned int id = 0;
 
-	void draw(sf::RenderWindow &window, const sf::Time deltaTime);
-	void update(const sf::Time deltaTime);
-	void keyPress(sf::Keyboard::Key &key);
-	void keyRelease(sf::Keyboard::Key &key);
+	virtual void draw(sf::RenderWindow &window, const sf::Time deltaTime);
+	virtual void update(const sf::Time deltaTime);
+	virtual void keyPress(sf::Keyboard::Key &key);
+	virtual void keyRelease(sf::Keyboard::Key &key);
+
+	virtual void checkCollision(Entity *other);
 
 	std::map<std::string, Animation> animations;
 
 	// DEBUGGING
 	bool displayCollision = true;
-
-	// VERY temporary movement handler
-	float acceleration = 0.1;
-	float deceleration = 0.25;
-	float maxWalkSpeed = 2.0;
-	float maxRunSpeed = 4.0;
-
-	bool movementUp;
-	bool movementDown;
-	bool movementLeft;
-	bool movementRight;
-	bool running;
 
 	sf::Vector2f lastPos;
 	sf::Vector2f pos;
@@ -48,6 +50,8 @@ class Entity : sf::Transformable
 
 	sf::FloatRect collRect;
 	AnimatedSprite sprite;
+
+	std::shared_ptr<b2Body> body;
 
     private:
 	sf::Texture *texture;

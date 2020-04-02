@@ -23,7 +23,8 @@ LDLIBS		:= -lsfml-graphics \
 			   -llua \
 			   -ltinyxml2 \
 			   -lpthread \
-			   -lboost_filesystem
+			   -lboost_filesystem \
+			   -lBox2D
 
 INC			:= -I$(INCDIR) -I/usr/local/include
 INCDEP		:= -I$(INCDIR)

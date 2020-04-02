@@ -11,6 +11,7 @@
 #include <tinyxml2.h>
 #include <vector>
 
+#include "tile.hpp"
 #include "tileset.hpp"
 
 namespace tmx
@@ -35,6 +36,7 @@ class Layer
 	unsigned int height;
 
 	std::vector<unsigned int> data;
+	std::vector<std::vector<MapTile>> tiles;
 
 	Tileset tileset;
 

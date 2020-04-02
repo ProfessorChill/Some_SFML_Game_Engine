@@ -78,6 +78,29 @@ tmx::Layer::Layer(tinyxml2::XMLElement *layerElement)
 	default:
 		break;
 	}
+
+	// Assign the data to the maptiles vector
+	unsigned int xPos = 0;
+	unsigned int yPos = 0;
+
+	for (unsigned int x = 0; x < this->width; x++) {
+		std::vector<MapTile> maptile;
+
+		for (unsigned int y = 0; y < this->height; y++) {
+			if (xPos >= this->width * this->tileset.tileWidth) {
+				yPos += this->tileset.tileHeight;
+				xPos = 0;
+			}
+
+			if ((this->data[x * this->width + y] -
+			     this->tileset.firstGid) ==
+			    static_cast<unsigned int>(-1)) {
+				xPos += this->tileset.tileWidth;
+
+				continue;
+			}
+		}
+	}
 }
 
 void tmx::Layer::draw(sf::RenderWindow &window, sf::Time deltaTime)
@@ -85,8 +108,8 @@ void tmx::Layer::draw(sf::RenderWindow &window, sf::Time deltaTime)
 	unsigned int xPos = 0;
 	unsigned int yPos = 0;
 
-	for (unsigned int x = 0; x < this->width; ++x) {
-		for (unsigned int y = 0; y < this->height; ++y) {
+	for (unsigned int x = 0; x < this->width; x++) {
+		for (unsigned int y = 0; y < this->height; y++) {
 			if (xPos >= this->width * this->tileset.tileWidth) {
 				yPos += this->tileset.tileHeight;
 				xPos = 0;
