@@ -40,3 +40,4 @@
 *.plist
 build/obj/
 build/bin/
+build/.clangd
