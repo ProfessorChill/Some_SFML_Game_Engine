@@ -20,17 +20,15 @@ public:
 	Object(tinyxml2::XMLElement *objectElement)
 	{
 		objectElement->QueryUnsignedAttribute("id", &this->id);
-		this->name = objectElement->Attribute("name");
-		this->type = objectElement->Attribute("type");
+		this->name =
+		    objectElement->Attribute("name") ? objectElement->Attribute("name") : "";
+		this->type =
+		    objectElement->Attribute("type") ? objectElement->Attribute("type") : "";
 		objectElement->QueryUnsignedAttribute("x", &this->x);
 		objectElement->QueryUnsignedAttribute("y", &this->y);
 		objectElement->QueryUnsignedAttribute("width", &this->width);
 		objectElement->QueryUnsignedAttribute("height", &this->height);
 		objectElement->QueryBoolAttribute("visible", &this->visible);
-
-		if (this->visible) {
-			std::cout << "Visible\n";
-		}
 
 		tinyxml2::XMLElement *properties = objectElement->FirstChildElement("properties");
 
