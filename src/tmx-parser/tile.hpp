@@ -1,15 +1,10 @@
-#include <SFML/Graphics.hpp>
-
-enum MapTileType {
-	mtAir,
-	mtWall,
-	mtSolid,
-};
+#ifndef TMX_PARSER_TILE_HPP
+#define TMX_PARSER_TILE_HPP
 
 struct MapTile {
-	MapTileType type;
-	sf::Color light;
-	sf::Vector2i index;
-	char intensity;
-	char absorb;
+	unsigned int x;
+	unsigned int y;
+	bool isBlocking;
 };
+
+#endif

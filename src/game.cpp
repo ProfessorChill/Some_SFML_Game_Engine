@@ -1,7 +1,11 @@
 #include "game.hpp"
 #include "game_state.hpp"
 
-void Game::loadTextures() {}
+#include <sstream>
+
+void Game::loadTextures()
+{
+}
 
 void Game::pushState(GameState *state)
 {
@@ -44,6 +48,21 @@ void Game::gameLoop()
 {
 	sf::Clock clock;
 
+	// Temporary font for FPS display.
+	sf::Font font;
+	if (!font.loadFromFile(this->selfLocation.string() +
+			       "/resources/fonts/Source Code Pro/SourceCodePro-Light.ttf")) {
+		std::cout << "Unable to find font.\n";
+
+		return;
+	}
+
+	sf::Text text;
+	text.setFont(font);
+	text.setString("FPS: 0.0000");
+	text.setCharacterSize(16);
+	text.setFillColor(sf::Color::White);
+
 	while (this->window.isOpen()) {
 		sf::Time elapsed = clock.restart();
 
@@ -60,6 +79,16 @@ void Game::gameLoop()
 
 		currentState->draw(elapsed);
 
+		sf::Vector2f viewportTopLeft =
+		    this->window.mapPixelToCoords(sf::Vector2i(0, 0), this->window.getView());
+
+		std::ostringstream ss;
+		ss << (1000000.0f / clock.restart().asMicroseconds());
+		text.setString("FPS: " + ss.str());
+		text.setPosition(viewportTopLeft);
+
+		this->window.draw(text);
+
 		this->window.display();
 	}
 }
@@ -72,5 +101,6 @@ Game::Game()
 	// std::cout << this->selfLocation << std::endl;
 
 	this->window.create(sf::VideoMode(800, 600), "Some Game");
+	this->window.setVerticalSyncEnabled(true);
 	this->window.setFramerateLimit(60);
 }

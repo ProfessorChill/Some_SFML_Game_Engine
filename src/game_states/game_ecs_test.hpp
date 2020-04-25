@@ -1,7 +1,7 @@
 #ifndef GAME_STATES_GAME_ECS_TEST_HPP
 #define GAME_STATES_GAME_ECS_TEST_HPP
 
-#include <SFML/Graphics.hpp>
+#include <SFML/Graphics/Color.hpp>
 #include <cmath>
 #include <iostream>
 #include <memory>
@@ -9,309 +9,17 @@
 
 #include "../ecs.hpp"
 #include "../game_state.hpp"
+#include "../tmx-parser/map.hpp"
 
-struct Transform {
-	sf::Vector2f position;
-};
+#include "../systems/player_system.hpp"
+#include "../systems/render_system.hpp"
+#include "../systems/rigid_physics_system.hpp"
 
-struct RigidBody {
-	sf::Vector2f velocity;
-	sf::Vector2f acceleration;
-	sf::Vector2f deceleration;
-};
-
-struct MovementNew {
-	bool up;
-	bool right;
-	bool down;
-	bool left;
-	bool running;
-};
-
-struct Renderable {
-	sf::Color color;
-};
-
-struct Player {
-	float maxWalkSpeed;
-	float maxRunSpeed;
-};
-
-struct EntityComparator {
-	bool operator()(const ecs::Entity &entity1,
-			const ecs::Entity &entity2) const
-	{
-		auto const &transform1 =
-		    sCoordinator->getComponent<Transform>(entity1);
-		auto const &transform2 =
-		    sCoordinator->getComponent<Transform>(entity2);
-
-		if (transform1.position.y == transform2.position.y) {
-			return transform1.position.x < transform2.position.x;
-		}
-
-		return transform1.position.y < transform2.position.y;
-	}
-
-	ecs::Coordinator *sCoordinator;
-};
-
-class RenderSystem : public ecs::System
-{
-public:
-	void init(ecs::Coordinator *coordinator, Game *game)
-	{
-		mCoordinator = coordinator;
-		mGame = game;
-	}
-
-	void update()
-	{
-		// I have no clue what a better way to sort sets would be.
-		std::set<ecs::Entity, EntityComparator> srtd(
-		    {}, EntityComparator{.sCoordinator = mCoordinator});
-		for (auto &entity : mEntities) {
-			srtd.insert(entity);
-		}
-
-		// Draw the sorted set.
-		for (auto const &entity : srtd) {
-			auto const &transform =
-			    mCoordinator->getComponent<Transform>(entity);
-			auto const &renderable =
-			    mCoordinator->getComponent<Renderable>(entity);
-
-			// Temporaraly draw a rectangle for the entities.
-			sf::RectangleShape rect(sf::Vector2f(50.0f, 50.0f));
-			rect.setPosition(transform.position);
-			rect.setFillColor(renderable.color);
-			mGame->window.draw(rect);
-		}
-	}
-
-private:
-	ecs::Coordinator *mCoordinator;
-	Game *mGame;
-};
-
-class PlayerSystem : public ecs::System
-{
-public:
-	void init(ecs::Coordinator *coordinator, Game *game)
-	{
-		mCoordinator = coordinator;
-		mGame = game;
-	}
-
-	void update()
-	{
-		for (auto const &entity : mEntities) {
-			auto &transform =
-			    mCoordinator->getComponent<Transform>(entity);
-			auto &rigidBody =
-			    mCoordinator->getComponent<RigidBody>(entity);
-			auto &movement =
-			    mCoordinator->getComponent<MovementNew>(entity);
-			auto &player =
-			    mCoordinator->getComponent<Player>(entity);
-
-			if (movement.running) {
-				if (movement.right &&
-				    rigidBody.velocity.x < player.maxRunSpeed) {
-					rigidBody.velocity.x +=
-					    rigidBody.acceleration.x;
-				}
-
-				if (movement.left && rigidBody.velocity.x >
-							 -player.maxRunSpeed) {
-					rigidBody.velocity.x -=
-					    rigidBody.acceleration.x;
-				}
-
-				if (movement.up && rigidBody.velocity.y >
-						       -player.maxRunSpeed) {
-					rigidBody.velocity.y -=
-					    rigidBody.acceleration.y;
-				}
-
-				if (movement.down &&
-				    rigidBody.velocity.y < player.maxRunSpeed) {
-					rigidBody.velocity.y +=
-					    rigidBody.acceleration.y;
-				}
-			} else {
-				if (movement.right && rigidBody.velocity.x <
-							  player.maxWalkSpeed) {
-					rigidBody.velocity.x +=
-					    rigidBody.acceleration.x;
-				}
-
-				if (movement.left && rigidBody.velocity.x >
-							 -player.maxWalkSpeed) {
-					rigidBody.velocity.x -=
-					    rigidBody.acceleration.x;
-				}
-
-				if (movement.up && rigidBody.velocity.y >
-						       -player.maxWalkSpeed) {
-					rigidBody.velocity.y -=
-					    rigidBody.acceleration.y;
-				}
-
-				if (movement.down && rigidBody.velocity.y <
-							 player.maxWalkSpeed) {
-					rigidBody.velocity.y +=
-					    rigidBody.acceleration.y;
-				}
-
-				// Clamp the run speed.
-				if (rigidBody.velocity.x > 0) {
-					rigidBody.velocity.x =
-					    std::min(player.maxWalkSpeed,
-						     rigidBody.velocity.x);
-				}
-
-				if (rigidBody.velocity.y > 0) {
-					rigidBody.velocity.y =
-					    std::min(player.maxWalkSpeed,
-						     rigidBody.velocity.y);
-				}
-
-				if (rigidBody.velocity.x < 0) {
-					rigidBody.velocity.x =
-					    std::max(-player.maxWalkSpeed,
-						     rigidBody.velocity.x);
-				}
-
-				if (rigidBody.velocity.y < 0) {
-					rigidBody.velocity.y =
-					    std::max(-player.maxWalkSpeed,
-						     rigidBody.velocity.y);
-				}
-			}
-
-			// Apply deceleration on X
-			if (rigidBody.velocity.x > 0 && !movement.right) {
-				if (rigidBody.velocity.x <
-				    rigidBody.deceleration.x) {
-					rigidBody.velocity.x = 0;
-				} else {
-					rigidBody.velocity.x -=
-					    rigidBody.deceleration.x;
-				}
-			} else if (rigidBody.velocity.x < 0 && !movement.left) {
-				if (rigidBody.velocity.x >
-				    rigidBody.deceleration.x) {
-					rigidBody.velocity.x = 0;
-				} else {
-					rigidBody.velocity.x +=
-					    rigidBody.deceleration.x;
-				}
-			}
-			transform.position.x += rigidBody.velocity.x;
-
-			// Apply acceleration on Y
-			if (rigidBody.velocity.y > 0 && !movement.down) {
-				if (rigidBody.velocity.y <
-				    rigidBody.deceleration.y) {
-					rigidBody.velocity.y = 0;
-				} else {
-					rigidBody.velocity.y -=
-					    rigidBody.deceleration.y;
-				}
-			} else if (rigidBody.velocity.y < 0 && !movement.up) {
-				if (rigidBody.velocity.y >
-				    rigidBody.deceleration.y) {
-					rigidBody.velocity.y = 0;
-				} else {
-					rigidBody.velocity.y +=
-					    rigidBody.deceleration.y;
-				}
-			}
-			transform.position.y += rigidBody.velocity.y;
-		}
-	}
-
-	void handleKeyDown(sf::Keyboard::Key key)
-	{
-		for (auto const &entity : mEntities) {
-			auto &movement =
-			    mCoordinator->getComponent<MovementNew>(entity);
-
-			switch (key) {
-				case sf::Keyboard::Right:
-				case sf::Keyboard::D:
-					movement.right = true;
-					break;
-
-				case sf::Keyboard::Left:
-				case sf::Keyboard::A:
-					movement.left = true;
-					break;
-
-				case sf::Keyboard::Up:
-				case sf::Keyboard::W:
-					movement.up = true;
-					break;
-
-				case sf::Keyboard::Down:
-				case sf::Keyboard::S:
-					movement.down = true;
-					break;
-
-				case sf::Keyboard::RShift:
-				case sf::Keyboard::LShift:
-					movement.running = true;
-					break;
-
-				default:
-					break;
-			}
-		}
-	}
-
-	void handleKeyUp(sf::Keyboard::Key key)
-	{
-		for (auto const &entity : mEntities) {
-			auto &movement =
-			    mCoordinator->getComponent<MovementNew>(entity);
-
-			switch (key) {
-				case sf::Keyboard::Right:
-				case sf::Keyboard::D:
-					movement.right = false;
-					break;
-
-				case sf::Keyboard::Left:
-				case sf::Keyboard::A:
-					movement.left = false;
-					break;
-
-				case sf::Keyboard::Up:
-				case sf::Keyboard::W:
-					movement.up = false;
-					break;
-
-				case sf::Keyboard::Down:
-				case sf::Keyboard::S:
-					movement.down = false;
-					break;
-
-				case sf::Keyboard::RShift:
-				case sf::Keyboard::LShift:
-					movement.running = false;
-					break;
-
-				default:
-					break;
-			}
-		}
-	}
-
-private:
-	ecs::Coordinator *mCoordinator;
-	Game *mGame;
-};
+struct Player;	    // ../components/player.hpp
+struct MovementNew; // ../components/movement.hpp
+struct Renderable;  // ../components/renderable.hpp
+struct RigidBody;   // ../components/rigidbody.hpp
+struct Transform;   // ../components/transform.hpp
 
 class GameEcsTest : public GameState
 {
@@ -319,6 +27,8 @@ public:
 	GameEcsTest(Game *game)
 	{
 		this->game = game;
+
+		this->map = tmx::Map(".", "resources/maps/untitled.tmx");
 
 		sf::Vector2f pos = sf::Vector2f(this->game->window.getSize());
 		mGameView.setSize(pos);
@@ -341,13 +51,10 @@ public:
 			ecs::Signature signature;
 
 			// Add components
-			signature.set(
-			    mCoordinator.getComponentType<Transform>());
-			signature.set(
-			    mCoordinator.getComponentType<Renderable>());
+			signature.set(mCoordinator.getComponentType<Transform>());
+			signature.set(mCoordinator.getComponentType<Renderable>());
 
-			mCoordinator.setSystemSignature<RenderSystem>(
-			    signature);
+			mCoordinator.setSystemSignature<RenderSystem>(signature);
 		}
 		mRenderSystem->init(&mCoordinator, game);
 
@@ -358,17 +65,27 @@ public:
 
 			// Add components
 			signature.set(mCoordinator.getComponentType<Player>());
-			signature.set(
-			    mCoordinator.getComponentType<Transform>());
-			signature.set(
-			    mCoordinator.getComponentType<RigidBody>());
-			signature.set(
-			    mCoordinator.getComponentType<MovementNew>());
+			signature.set(mCoordinator.getComponentType<Transform>());
+			signature.set(mCoordinator.getComponentType<RigidBody>());
+			signature.set(mCoordinator.getComponentType<MovementNew>());
+			signature.set(mCoordinator.getComponentType<Renderable>());
 
-			mCoordinator.setSystemSignature<PlayerSystem>(
-			    signature);
+			mCoordinator.setSystemSignature<PlayerSystem>(signature);
 		}
 		mPlayerSystem->init(&mCoordinator, game);
+
+		// Rigid Physics System
+		mRigidPhysicsSystem = mCoordinator.registerSystem<RigidPhysicsSystem>();
+		{
+			ecs::Signature signature;
+
+			signature.set(mCoordinator.getComponentType<RigidBody>());
+			signature.set(mCoordinator.getComponentType<Transform>());
+			signature.set(mCoordinator.getComponentType<Renderable>());
+
+			mCoordinator.setSystemSignature<RigidPhysicsSystem>(signature);
+		}
+		mRigidPhysicsSystem->init(&mCoordinator, game);
 
 		// Create a test entity that is controllable.
 		// clang-format off
@@ -381,7 +98,8 @@ public:
 			.position = sf::Vector2f(0.0f, 0.0f),
 		});
 		mCoordinator.addComponent(entity, Renderable{
-			.color = sf::Color::White
+			.color = sf::Color::White,
+			.size = sf::Vector2f(50.0f, 50.0f),
 		});
 		mCoordinator.addComponent(entity, MovementNew{
 			.up = false,
@@ -389,6 +107,7 @@ public:
 			.down = false,
 			.left = false,
 			.running = false,
+			.mapPtr = &this->map,
 		});
 		mCoordinator.addComponent(entity, RigidBody{
 			.velocity = sf::Vector2f(0.0f, 0.0f),
@@ -402,13 +121,22 @@ public:
 		// clang-format off
 		ecs::Entity entityTwo = mCoordinator.createEntity();
 		mCoordinator.addComponent(entityTwo, Transform{
-			.position = sf::Vector2f(1.0f, 15.0f)
+			.position = sf::Vector2f(1.0f, 15.0f),
 		});
 		mCoordinator.addComponent(entityTwo, Renderable{
-			.color = sf::Color::Red
+			.color = sf::Color::Red,
+			.size = sf::Vector2f(25.0f, 25.0f),
+		});
+		mCoordinator.addComponent(entityTwo, RigidBody{
+			.velocity = sf::Vector2f(0.0f, 0.0f),
+			.acceleration = sf::Vector2f(0.1f, 0.1f),
+			.deceleration = sf::Vector2f(0.25f, 0.25f),
 		});
 		mEntities.push_back(entityTwo);
 		// clang-format on
+
+		// Initialize spawns at the end of the constructor
+		mPlayerSystem->initSpawns();
 	}
 
 	virtual void draw(const sf::Time deltaTime)
@@ -416,13 +144,16 @@ public:
 		this->game->window.clear(sf::Color::Black);
 		this->game->window.setView(this->mGameView);
 
+		this->map.draw(this->game->window, sf::Clock().restart());
+
 		// Updating the render system draws it.
 		mRenderSystem->update();
 	}
 
 	virtual void update(const sf::Time deltaTime)
 	{
-		mPlayerSystem->update();
+		mPlayerSystem->update(&mGameView);
+		mRigidPhysicsSystem->update(&map);
 	}
 
 	virtual void handleInput()
@@ -437,25 +168,21 @@ public:
 					break;
 
 				case sf::Event::Resized:
-					this->mGameView.setSize(
-					    event.size.width,
-					    event.size.height);
+					this->mGameView.setSize(event.size.width,
+								event.size.height);
 
 					break;
 
 				case sf::Event::KeyPressed:
-					if (event.key.code ==
-					    sf::Keyboard::Escape) {
+					if (event.key.code == sf::Keyboard::Escape) {
 						this->game->window.close();
 					}
 
-					mPlayerSystem->handleKeyDown(
-					    event.key.code);
+					mPlayerSystem->handleKeyDown(event.key.code);
 					break;
 
 				case sf::Event::KeyReleased:
-					mPlayerSystem->handleKeyUp(
-					    event.key.code);
+					mPlayerSystem->handleKeyUp(event.key.code);
 					break;
 
 				default:
@@ -464,12 +191,16 @@ public:
 		}
 	}
 
-private:
+public:
 	sf::View mGameView;
+
+private:
+	tmx::Map map;
 
 	ecs::Coordinator mCoordinator;
 	std::shared_ptr<RenderSystem> mRenderSystem;
 	std::shared_ptr<PlayerSystem> mPlayerSystem;
+	std::shared_ptr<RigidPhysicsSystem> mRigidPhysicsSystem;
 	std::vector<ecs::Entity> mEntities;
 };
 

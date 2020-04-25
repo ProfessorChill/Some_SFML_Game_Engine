@@ -37,8 +37,7 @@ public:
 
 	Entity createEntity()
 	{
-		assert(mLivingEntityCount < MAX_ENTITIES &&
-		       "Too many entities in existence.");
+		assert(mLivingEntityCount < MAX_ENTITIES && "Too many entities in existence.");
 
 		// Take an ID from the front of the queue.
 		Entity id = mAvaliableEntities.front();
@@ -102,8 +101,7 @@ class ComponentArray : public IComponentArray
 public:
 	void insertData(Entity entity, T component)
 	{
-		assert(mEntityToIndexMap.find(entity) ==
-			   mEntityToIndexMap.end() &&
+		assert(mEntityToIndexMap.find(entity) == mEntityToIndexMap.end() &&
 		       "Component added to same entity more than once.");
 
 		// Put the new entry at the end and update the maps.
@@ -116,20 +114,17 @@ public:
 
 	void removeData(Entity entity)
 	{
-		assert(mEntityToIndexMap.find(entity) !=
-			   mEntityToIndexMap.end() &&
+		assert(mEntityToIndexMap.find(entity) != mEntityToIndexMap.end() &&
 		       "Removing non-existent component.");
 
 		// Copy element at end into deleted element's place to maintain
 		// density.
 		size_t indexOfRemovedEntity = mEntityToIndexMap[entity];
 		size_t indexOfLastElement = mSize - 1;
-		mComponentArray[indexOfRemovedEntity] =
-		    mComponentArray[indexOfLastElement];
+		mComponentArray[indexOfRemovedEntity] = mComponentArray[indexOfLastElement];
 
 		// Update map to point to the moved spot.
-		Entity entityOfLastElement =
-		    mIndexToEntityMap[indexOfLastElement];
+		Entity entityOfLastElement = mIndexToEntityMap[indexOfLastElement];
 		mEntityToIndexMap[entityOfLastElement] = indexOfRemovedEntity;
 		mIndexToEntityMap[indexOfRemovedEntity] = entityOfLastElement;
 
@@ -141,8 +136,7 @@ public:
 
 	T &getData(Entity entity)
 	{
-		assert(mEntityToIndexMap.find(entity) !=
-			   mEntityToIndexMap.end() &&
+		assert(mEntityToIndexMap.find(entity) != mEntityToIndexMap.end() &&
 		       "Retrieving non-existent component.");
 
 		return mComponentArray[mEntityToIndexMap[entity]];
@@ -173,8 +167,7 @@ public:
 	{
 		const char *typeName = typeid(T).name();
 
-		assert(mComponentTypes.find(typeName) ==
-			   mComponentTypes.end() &&
+		assert(mComponentTypes.find(typeName) == mComponentTypes.end() &&
 		       "Registering component type more than once.");
 
 		// Add this component type to the component type map.
@@ -182,8 +175,7 @@ public:
 
 		// Create a ComponentArray pointer and add it to the component
 		// arrays map.
-		mComponentArrays.insert(
-		    {typeName, std::make_shared<ComponentArray<T>>()});
+		mComponentArrays.insert({typeName, std::make_shared<ComponentArray<T>>()});
 
 		// Increment the value so that the next component registered
 		// will be different.
@@ -195,8 +187,7 @@ public:
 	{
 		const char *typeName = typeid(T).name();
 
-		assert(mComponentTypes.find(typeName) !=
-			   mComponentTypes.end() &&
+		assert(mComponentTypes.find(typeName) != mComponentTypes.end() &&
 		       "Component not registered before use.");
 
 		// Return this component's type - used for signature creation.
@@ -241,8 +232,7 @@ private:
 	std::unordered_map<const char *, ComponentType> mComponentTypes{};
 
 	// Map from type string pointer to a component array.
-	std::unordered_map<const char *, std::shared_ptr<IComponentArray>>
-	    mComponentArrays;
+	std::unordered_map<const char *, std::shared_ptr<IComponentArray>> mComponentArrays;
 
 	// The component type to be assigned to the next registered component -
 	// starting at 0.
@@ -255,12 +245,10 @@ private:
 	{
 		const char *typeName = typeid(T).name();
 
-		assert(mComponentTypes.find(typeName) !=
-			   mComponentTypes.end() &&
+		assert(mComponentTypes.find(typeName) != mComponentTypes.end() &&
 		       "Component not registered before use.");
 
-		return std::static_pointer_cast<ComponentArray<T>>(
-		    mComponentArrays[typeName]);
+		return std::static_pointer_cast<ComponentArray<T>>(mComponentArrays[typeName]);
 	}
 };
 
@@ -319,8 +307,7 @@ public:
 			auto const &system = pair.second;
 			auto const &systemSignature = mSignatures[type];
 
-			if ((entitySignature & systemSignature) ==
-			    systemSignature) {
+			if ((entitySignature & systemSignature) == systemSignature) {
 				system->mEntities.insert(entity);
 			} else {
 				system->mEntities.erase(entity);

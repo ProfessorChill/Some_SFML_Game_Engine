@@ -1,12 +1,16 @@
 #ifndef GAME_STATE_HPP
 #define GAME_STATE_HPP
 
+#include <SFML/Graphics/View.hpp>
+
 #include "game.hpp"
 
 class GameState
 {
-    public:
-	virtual ~GameState() {}
+public:
+	virtual ~GameState()
+	{
+	}
 
 	Game *game;
 

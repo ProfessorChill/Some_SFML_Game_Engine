@@ -26,8 +26,10 @@ enum Encoding {
 
 class Layer
 {
-    public:
-	Layer() {}
+public:
+	Layer()
+	{
+	}
 	explicit Layer(tinyxml2::XMLElement *layerElement);
 
 	unsigned int id;
@@ -35,7 +37,7 @@ class Layer
 	unsigned int width;
 	unsigned int height;
 
-	std::vector<unsigned int> data;
+	std::vector<int> data;
 	std::vector<std::vector<MapTile>> tiles;
 
 	Tileset tileset;
@@ -43,8 +45,11 @@ class Layer
 	tmx::Encoding encoding;
 	sf::Sprite sprite;
 
+	void init();
 	void draw(sf::RenderWindow &window, sf::Time deltaTime);
 	void update(sf::Time deltaTime);
+
+	bool isBlocking;
 };
 } // namespace tmx
 

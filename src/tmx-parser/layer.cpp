@@ -3,14 +3,18 @@
 tmx::Layer::Layer(tinyxml2::XMLElement *layerElement)
 {
 	tinyxml2::XMLElement *data = layerElement->FirstChildElement("data");
+	tinyxml2::XMLElement *properties = layerElement->FirstChildElement("properties");
 
-	this->id = std::stoi(layerElement->Attribute("id"));
+	layerElement->QueryUnsignedAttribute("id", &this->id);
 	this->name = layerElement->Attribute("name");
-	this->width = std::stoi(layerElement->Attribute("width"));
-	this->height = std::stoi(layerElement->Attribute("height"));
+	layerElement->QueryUnsignedAttribute("width", &this->width);
+	layerElement->QueryUnsignedAttribute("height", &this->height);
 
 	std::string dataEncoding;
 	std::string dataCompression;
+
+	// If true, all objects on the layer will block physics objects.
+	isBlocking = false;
 
 	if (data->Attribute("compression") != nullptr) {
 		dataCompression = data->Attribute("compression");
@@ -34,51 +38,67 @@ tmx::Layer::Layer(tinyxml2::XMLElement *layerElement)
 		this->encoding = tmx::Encoding::XML;
 	}
 
+	if (properties != nullptr) {
+		tinyxml2::XMLElement *pListElement = properties->FirstChildElement("property");
+
+		std::string propName = pListElement->Attribute("name");
+
+		if (propName.compare("isBlocking") == 0) {
+			std::string propValue = pListElement->Attribute("value");
+			if (propValue.compare("true") == 0) {
+				isBlocking = true;
+			}
+		}
+	}
+
 	switch (this->encoding) {
-	case tmx::Encoding::CSV: {
-		std::string dataText = data->GetText();
-		std::replace(dataText.begin(), dataText.end(), ',', ' ');
+		case tmx::Encoding::CSV: {
+			std::string dataText = data->GetText();
+			std::replace(dataText.begin(), dataText.end(), ',', ' ');
 
-		std::stringstream ss(dataText);
-		std::copy(std::istream_iterator<int>(ss),
-			  std::istream_iterator<int>(),
-			  std::back_inserter(this->data));
+			std::stringstream ss(dataText);
+			std::copy(std::istream_iterator<int>(ss), std::istream_iterator<int>(),
+				  std::back_inserter(this->data));
 
-		break;
+			break;
+		}
+
+		case tmx::Encoding::XML: {
+			std::cout << "[\x1b[31mERROR\x1b[0m] XML parsing is not "
+				     "implemented yet!\n";
+
+			break;
+		}
+
+		case tmx::Encoding::BASE64_UNCOMPRESSED: {
+			std::cout << "[\x1b[31mERROR\x1b[0m] Uncompressed Base64 "
+				     "parsing is not implemented yet!\n";
+
+			break;
+		}
+
+		case tmx::Encoding::BASE64_GZIP_COMPRESSED: {
+			std::cout << "[\x1b[31mERROR\x1b[0m] GZIP Compressed Base64 "
+				     "parsing is not implemented yet!\n";
+
+			break;
+		}
+
+		case tmx::Encoding::BASE64_ZLIB_COMPRESSED: {
+			std::cout << "[\x1b[31mERROR\x1b[0m] ZLIB Compressed Base64 "
+				     "parsing is not implemented yet!\n";
+
+			break;
+		}
+
+		default:
+			break;
 	}
+}
 
-	case tmx::Encoding::XML: {
-		std::cout << "[\x1b[31mERROR\x1b[0m] XML parsing is not "
-			     "implemented yet!\n";
-
-		break;
-	}
-
-	case tmx::Encoding::BASE64_UNCOMPRESSED: {
-		std::cout << "[\x1b[31mERROR\x1b[0m] Uncompressed Base64 "
-			     "parsing is not implemented yet!\n";
-
-		break;
-	}
-
-	case tmx::Encoding::BASE64_GZIP_COMPRESSED: {
-		std::cout << "[\x1b[31mERROR\x1b[0m] GZIP Compressed Base64 "
-			     "parsing is not implemented yet!\n";
-
-		break;
-	}
-
-	case tmx::Encoding::BASE64_ZLIB_COMPRESSED: {
-		std::cout << "[\x1b[31mERROR\x1b[0m] ZLIB Compressed Base64 "
-			     "parsing is not implemented yet!\n";
-
-		break;
-	}
-
-	default:
-		break;
-	}
-
+/* This is called after the sprite gets set. */
+void tmx::Layer::init()
+{
 	// Assign the data to the maptiles vector
 	unsigned int xPos = 0;
 	unsigned int yPos = 0;
@@ -92,14 +112,22 @@ tmx::Layer::Layer(tinyxml2::XMLElement *layerElement)
 				xPos = 0;
 			}
 
-			if ((this->data[x * this->width + y] -
-			     this->tileset.firstGid) ==
-			    static_cast<unsigned int>(-1)) {
+			if ((this->data[x * this->width + y] - this->tileset.firstGid) < 0) {
 				xPos += this->tileset.tileWidth;
 
 				continue;
 			}
+
+			maptile.push_back(MapTile{
+			    .x = xPos,
+			    .y = yPos,
+			    .isBlocking = isBlocking,
+			});
+
+			xPos += this->tileset.tileWidth;
 		}
+
+		tiles.push_back(maptile);
 	}
 }
 
@@ -115,21 +143,17 @@ void tmx::Layer::draw(sf::RenderWindow &window, sf::Time deltaTime)
 				xPos = 0;
 			}
 
-			if ((this->data[x * this->width + y] -
-			     this->tileset.firstGid) ==
-			    static_cast<unsigned int>(-1)) {
+			if ((this->data[x * this->width + y] - this->tileset.firstGid) < 0) {
 				xPos += this->tileset.tileWidth;
 
 				continue;
 			}
 
 			this->sprite.setTextureRect(sf::IntRect(
-			    ((this->data[x * this->width + y] -
-			      this->tileset.firstGid) %
+			    ((this->data[x * this->width + y] - this->tileset.firstGid) %
 			     this->tileset.columns) *
 				this->tileset.tileWidth,
-			    ((this->data[x * this->width + y] -
-			      this->tileset.firstGid) /
+			    ((this->data[x * this->width + y] - this->tileset.firstGid) /
 			     this->tileset.columns) *
 				this->tileset.tileHeight,
 			    this->tileset.tileWidth, this->tileset.tileHeight));

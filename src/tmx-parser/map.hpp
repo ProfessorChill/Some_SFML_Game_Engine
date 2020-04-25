@@ -8,14 +8,17 @@
 #include <vector>
 
 #include "layer.hpp"
+#include "object-group.hpp"
 #include "tileset.hpp"
 
 namespace tmx
 {
 class Map
 {
-    public:
-	Map() {}
+public:
+	Map()
+	{
+	}
 	explicit Map(const std::string &basePath, const std::string &filename);
 
 	double version;
@@ -29,6 +32,7 @@ class Map
 
 	std::vector<Layer> layers;
 	std::vector<Tileset> tilesets;
+	std::vector<ObjectGroup> objectGroups;
 
 	void draw(sf::RenderWindow &window, sf::Time deltaTime);
 	void update(sf::Time deltaTime);

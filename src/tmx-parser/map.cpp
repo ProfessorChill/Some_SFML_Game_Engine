@@ -7,27 +7,25 @@ tmx::Map::Map(const std::string &basePath, const std::string &filename)
 
 	tinyxml2::XMLElement *mapRoot = doc.RootElement();
 
-	this->version = std::stod(mapRoot->Attribute("version"));
+	mapRoot->QueryDoubleAttribute("version", &this->version);
 	this->orientation = mapRoot->Attribute("orientation");
 	this->renderOrder = mapRoot->Attribute("renderorder");
-	this->width = std::stoi(mapRoot->Attribute("width"));
-	this->height = std::stoi(mapRoot->Attribute("height"));
-	this->tileWidth = std::stoi(mapRoot->Attribute("tilewidth"));
-	this->tileHeight = std::stoi(mapRoot->Attribute("tileheight"));
+	mapRoot->QueryUnsignedAttribute("width", &this->width);
+	mapRoot->QueryUnsignedAttribute("height", &this->height);
+	mapRoot->QueryUnsignedAttribute("tilewidth", &this->tileWidth);
+	mapRoot->QueryUnsignedAttribute("tileheight", &this->tileHeight);
 
-	tinyxml2::XMLElement *layerElement =
-	    mapRoot->FirstChildElement("layer");
-
-	tinyxml2::XMLElement *tilesetElement =
-	    mapRoot->FirstChildElement("tileset");
+	tinyxml2::XMLElement *tilesetElement = mapRoot->FirstChildElement("tileset");
+	tinyxml2::XMLElement *layerElement = mapRoot->FirstChildElement("layer");
+	tinyxml2::XMLElement *objectGroupElement = mapRoot->FirstChildElement("objectgroup");
 
 	while (tilesetElement != nullptr) {
 		std::string source = tilesetElement->Attribute("source");
-		unsigned int firstGid =
-		    std::stoi(tilesetElement->Attribute("firstgid"));
 
-		this->tilesets.push_back(
-		    tmx::Tileset(basePath, source, firstGid));
+		unsigned int firstGid = 0;
+		tilesetElement->QueryUnsignedAttribute("firstgid", &firstGid);
+
+		this->tilesets.push_back(tmx::Tileset(basePath, source, firstGid));
 
 		tilesetElement = tilesetElement->NextSiblingElement("tileset");
 	}
@@ -38,9 +36,16 @@ tmx::Map::Map(const std::string &basePath, const std::string &filename)
 		layerElement = layerElement->NextSiblingElement("layer");
 	}
 
+	while (objectGroupElement != nullptr) {
+		this->objectGroups.push_back(tmx::ObjectGroup(objectGroupElement));
+
+		objectGroupElement = objectGroupElement->NextSiblingElement("objectgroup");
+	}
+
 	for (size_t x = 0; x < this->layers.size(); ++x) {
 		this->layers[x].sprite = sf::Sprite(this->tilesets[0].texture);
 		this->layers[x].tileset = this->tilesets[0];
+		this->layers[x].init(); // Called after tiles and sprites are set.
 	}
 }
 

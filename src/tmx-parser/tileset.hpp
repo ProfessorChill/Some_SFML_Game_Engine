@@ -12,12 +12,13 @@ namespace tmx
 {
 class Tileset
 {
-    public:
-	Tileset() {}
-	explicit Tileset(const std::string &basePath,
-			 const std::string &filename, unsigned int firstGid);
+public:
+	Tileset()
+	{
+	}
+	explicit Tileset(const std::string &basePath, const std::string &filename, int firstGid);
 
-	unsigned int firstGid;
+	int firstGid;
 	std::string source;
 
 	double version;
