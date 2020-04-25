@@ -1,7 +1,7 @@
 # Some SFML Game Engine
 
 ## Requirements
-* SFLM
+* SFML
 * LUA
 * tinyxml2
 * boost (for boost filesystem)
