@@ -1,19 +1,88 @@
 #include "map.hpp"
+#include "../debug.hpp"
 
 tmx::Map::Map(const std::string &basePath, const std::string &filename)
 {
 	tinyxml2::XMLDocument doc;
 	doc.LoadFile((basePath + "/" + filename).c_str());
 
+	// Set default values (in case of error).
+	this->version = 0.0;
+	this->orientation = "orthogonal";
+	this->renderOrder = "right-down";
+	this->width = 100;
+	this->height = 100;
+	this->tileWidth = 32;
+	this->tileHeight = 32;
+
+	if (doc.Error()) {
+		std::ostringstream errMsg;
+		errMsg << "Error parsing XML file " << (basePath + "/" + filename).c_str();
+
+		dbg::printMessage(errMsg.str().c_str(), dbg::Urgency::ERROR);
+	}
+
 	tinyxml2::XMLElement *mapRoot = doc.RootElement();
 
-	mapRoot->QueryDoubleAttribute("version", &this->version);
-	this->orientation = mapRoot->Attribute("orientation");
-	this->renderOrder = mapRoot->Attribute("renderorder");
-	mapRoot->QueryUnsignedAttribute("width", &this->width);
-	mapRoot->QueryUnsignedAttribute("height", &this->height);
-	mapRoot->QueryUnsignedAttribute("tilewidth", &this->tileWidth);
-	mapRoot->QueryUnsignedAttribute("tileheight", &this->tileHeight);
+	if (dbg::handleXMLError(mapRoot->QueryDoubleAttribute("version", &this->version))) {
+		std::ostringstream errMsg;
+		errMsg << "Attempting to continue without map version, using default "
+		       << this->version << ".";
+
+		dbg::printMessage(errMsg.str().c_str(), dbg::Urgency::WARNING);
+	}
+
+	if (mapRoot->Attribute("orientation")) {
+		this->orientation = mapRoot->Attribute("orientation");
+	} else {
+		std::ostringstream errMsg;
+		errMsg << "Attempting to continue without map orientation, using default "
+		       << this->orientation << ".";
+
+		dbg::printMessage(errMsg.str().c_str(), dbg::Urgency::WARNING);
+	}
+
+	if (mapRoot->Attribute("renderorder")) {
+		this->renderOrder = mapRoot->Attribute("renderorder");
+	} else {
+		std::ostringstream errMsg;
+		errMsg << "Attempting to continue without map render order, using default "
+		       << this->renderOrder << ".";
+
+		dbg::printMessage(errMsg.str().c_str(), dbg::Urgency::WARNING);
+	}
+
+	if (dbg::handleXMLError(mapRoot->QueryUnsignedAttribute("width", &this->width))) {
+		std::ostringstream errMsg;
+		errMsg << "Attempting to continue without map width, using default " << this->width
+		       << ".";
+
+		dbg::printMessage(errMsg.str().c_str(), dbg::Urgency::WARNING);
+	}
+
+	if (dbg::handleXMLError(mapRoot->QueryUnsignedAttribute("height", &this->height))) {
+		std::ostringstream errMsg;
+		errMsg << "Attempting to continue without map height, using default "
+		       << this->height << ".";
+
+		dbg::printMessage(errMsg.str().c_str(), dbg::Urgency::WARNING);
+	}
+
+	if (dbg::handleXMLError(mapRoot->QueryUnsignedAttribute("tilewidth", &this->tileWidth))) {
+		std::ostringstream errMsg;
+		errMsg << "Attempting to continue without map tile width, using default "
+		       << this->tileWidth << ".";
+
+		dbg::printMessage(errMsg.str().c_str(), dbg::Urgency::WARNING);
+	}
+
+	if (dbg::handleXMLError(mapRoot->QueryUnsignedAttribute("tileheight", &this->tileHeight))) {
+		std::ostringstream errMsg;
+		errMsg << "Attempting to continue without map tile height, using default "
+		       << this->tileHeight << ".";
+
+		dbg::printMessage(errMsg.str().c_str(), dbg::Urgency::WARNING);
+	}
 
 	tinyxml2::XMLElement *tilesetElement = mapRoot->FirstChildElement("tileset");
 	tinyxml2::XMLElement *layerElement = mapRoot->FirstChildElement("layer");
@@ -23,7 +92,14 @@ tmx::Map::Map(const std::string &basePath, const std::string &filename)
 		std::string source = tilesetElement->Attribute("source");
 
 		unsigned int firstGid = 0;
-		tilesetElement->QueryUnsignedAttribute("firstgid", &firstGid);
+		if (dbg::handleXMLError(
+			tilesetElement->QueryUnsignedAttribute("firstgid", &firstGid))) {
+			std::ostringstream errMsg;
+			errMsg << "Attempting to continue without layer GID, using default "
+			       << firstGid << ".";
+
+			dbg::printMessage(errMsg.str().c_str(), dbg::Urgency::WARNING);
+		}
 
 		this->tilesets.push_back(tmx::Tileset(basePath, source, firstGid));
 

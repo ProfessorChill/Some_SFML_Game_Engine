@@ -12,6 +12,7 @@
 #include <tinyxml2.h>
 #include <vector>
 
+#include "../debug.hpp"
 #include "tile.hpp"
 #include "tileset.hpp"
 

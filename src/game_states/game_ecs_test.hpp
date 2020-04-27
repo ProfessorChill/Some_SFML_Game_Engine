@@ -7,8 +7,10 @@
 #include <memory>
 #include <vector>
 
+#include "../debug.hpp"
 #include "../ecs.hpp"
 #include "../game_state.hpp"
+#include "../texture_manager.hpp"
 #include "../tmx-parser/map.hpp"
 
 #include "../systems/player_system.hpp"
@@ -26,14 +28,17 @@ class GameEcsTest : public GameState
 public:
 	GameEcsTest(Game *game)
 	{
+		// Initialize values.
 		this->game = game;
-
 		this->map = tmx::Map(".", "resources/maps/untitled.tmx");
+		dbg::printMessage("Initialization done.", dbg::Urgency::DEFAULT);
 
+		// Set the game view.
 		sf::Vector2f pos = sf::Vector2f(this->game->window.getSize());
 		mGameView.setSize(pos);
 		pos *= 0.5f;
 		mGameView.setCenter(pos);
+		dbg::printMessage("Gameview setup.", dbg::Urgency::DEFAULT);
 
 		// Initialize the coordinator.
 		mCoordinator.init();
@@ -44,6 +49,7 @@ public:
 		mCoordinator.registerComponent<Renderable>();
 		mCoordinator.registerComponent<RigidBody>();
 		mCoordinator.registerComponent<MovementNew>();
+		dbg::printMessage("Registered components.", dbg::Urgency::DEFAULT);
 
 		// Render System
 		mRenderSystem = mCoordinator.registerSystem<RenderSystem>();
@@ -57,6 +63,7 @@ public:
 			mCoordinator.setSystemSignature<RenderSystem>(signature);
 		}
 		mRenderSystem->init(&mCoordinator, game);
+		dbg::printMessage("Setup rendering system.", dbg::Urgency::DEFAULT);
 
 		// Player System
 		mPlayerSystem = mCoordinator.registerSystem<PlayerSystem>();
@@ -73,6 +80,7 @@ public:
 			mCoordinator.setSystemSignature<PlayerSystem>(signature);
 		}
 		mPlayerSystem->init(&mCoordinator, game);
+		dbg::printMessage("Setup player system.", dbg::Urgency::DEFAULT);
 
 		// Rigid Physics System
 		mRigidPhysicsSystem = mCoordinator.registerSystem<RigidPhysicsSystem>();
@@ -86,6 +94,7 @@ public:
 			mCoordinator.setSystemSignature<RigidPhysicsSystem>(signature);
 		}
 		mRigidPhysicsSystem->init(&mCoordinator, game);
+		dbg::printMessage("Setup rigid body physics system.", dbg::Urgency::DEFAULT);
 
 		// Create a test entity that is controllable.
 		// clang-format off
@@ -137,6 +146,7 @@ public:
 
 		// Initialize spawns at the end of the constructor
 		mPlayerSystem->initSpawns();
+		dbg::printMessage("Initialized spawns.", dbg::Urgency::DEFAULT);
 	}
 
 	virtual void draw(const sf::Time deltaTime)
@@ -199,7 +209,11 @@ public:
 	sf::View mGameView;
 
 private:
+	void loadTextures();
+
+private:
 	tmx::Map map;
+	TextureManager mTexMgr;
 
 	ecs::Coordinator mCoordinator;
 	std::shared_ptr<RenderSystem> mRenderSystem;

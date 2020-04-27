@@ -4,8 +4,6 @@ tmx::Tileset::Tileset(const std::string &basePath, const std::string &filename, 
     : firstGid(firstGid), source(filename)
 {
 	std::string newPath = basePath + "/resources/maps/" + filename;
-	std::cout << newPath << std::endl;
-	std::cout << "Loaded Tileset\n";
 
 	tinyxml2::XMLDocument doc;
 	doc.LoadFile(newPath.c_str());

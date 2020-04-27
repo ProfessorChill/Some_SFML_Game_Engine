@@ -5,10 +5,46 @@ tmx::Layer::Layer(tinyxml2::XMLElement *layerElement)
 	tinyxml2::XMLElement *data = layerElement->FirstChildElement("data");
 	tinyxml2::XMLElement *properties = layerElement->FirstChildElement("properties");
 
-	layerElement->QueryUnsignedAttribute("id", &this->id);
-	this->name = layerElement->Attribute("name");
-	layerElement->QueryUnsignedAttribute("width", &this->width);
-	layerElement->QueryUnsignedAttribute("height", &this->height);
+	this->id = 0;
+	this->width = 100;
+	this->height = 100;
+
+	this->name =
+	    layerElement->Attribute("name") ? layerElement->Attribute("name") : "undefined";
+
+	if (dbg::handleXMLError(layerElement->QueryUnsignedAttribute("id", &this->id))) {
+		std::ostringstream errMsg;
+		errMsg << "Attempting to continue without layer id, using default " << this->id
+		       << ".";
+
+		dbg::printMessage(errMsg.str().c_str(), dbg::Urgency::WARNING);
+	}
+
+	if (dbg::handleXMLError(layerElement->QueryUnsignedAttribute("width", &this->width))) {
+		std::ostringstream errMsg;
+		errMsg << "Attempting to continue without layer width, using default "
+		       << this->width << ".";
+
+		dbg::printMessage(errMsg.str().c_str(), dbg::Urgency::WARNING);
+	}
+
+	if (dbg::handleXMLError(layerElement->QueryUnsignedAttribute("height", &this->height))) {
+		std::ostringstream errMsg;
+		errMsg << "Attempting to continue without layer height, using default "
+		       << this->height << ".";
+
+		dbg::printMessage(errMsg.str().c_str(), dbg::Urgency::WARNING);
+	}
+
+	if (!data || !data->GetText()) {
+		std::ostringstream errMsg;
+		errMsg << "TMX Parser layer \"" << this->name
+		       << "\" has no data, stopping layer parsing.";
+
+		dbg::printMessage(errMsg.str().c_str(), dbg::Urgency::WARNING);
+
+		return;
+	}
 
 	std::string dataEncoding;
 	std::string dataCompression;
@@ -44,7 +80,8 @@ tmx::Layer::Layer(tinyxml2::XMLElement *layerElement)
 	if (properties != nullptr) {
 		tinyxml2::XMLElement *pListElement = properties->FirstChildElement("property");
 
-		std::string propName = pListElement->Attribute("name");
+		std::string propName =
+		    pListElement->Attribute("name") ? pListElement->Attribute("name") : "";
 
 		if (propName.compare("isBlocking") == 0) {
 			pListElement->QueryBoolAttribute("value", &isBlocking);
@@ -68,47 +105,55 @@ tmx::Layer::Layer(tinyxml2::XMLElement *layerElement)
 		}
 
 		case tmx::Encoding::XML: {
-			std::cout << "[\x1b[31mERROR\x1b[0m] XML parsing is not "
-				     "implemented yet!\n";
-
-			break;
+			dbg::printMessage("XML parsing is not implemented yet!",
+					  dbg::Urgency::ERROR);
+			return;
 		}
 
 		case tmx::Encoding::BASE64_UNCOMPRESSED: {
-			std::cout << "[\x1b[31mERROR\x1b[0m] Uncompressed Base64 "
-				     "parsing is not implemented yet!\n";
-
-			break;
+			dbg::printMessage("Uncompressed Base64 parsing is not implemented yet!",
+					  dbg::Urgency::ERROR);
+			return;
 		}
 
 		case tmx::Encoding::BASE64_GZIP_COMPRESSED: {
-			std::cout << "[\x1b[31mERROR\x1b[0m] GZIP Compressed Base64 "
-				     "parsing is not implemented yet!\n";
-
-			break;
+			dbg::printMessage("GZIP Compressed Base64 parsing is not implemented yet!",
+					  dbg::Urgency::ERROR);
+			return;
 		}
 
 		case tmx::Encoding::BASE64_ZLIB_COMPRESSED: {
-			std::cout << "[\x1b[31mERROR\x1b[0m] ZLIB Compressed Base64 "
-				     "parsing is not implemented yet!\n";
-
-			break;
+			dbg::printMessage("ZLIB Compressed Base64 parsing is not implemented yet!",
+					  dbg::Urgency::ERROR);
+			return;
 		}
 
-		default:
-			break;
+		default: {
+			dbg::printMessage("Unsupported compression method, leaving layer.",
+					  dbg::Urgency::ERROR);
+			return;
+		}
 	}
 }
 
 /* This is called after the sprite gets set. */
 void tmx::Layer::init()
 {
+	int iw = static_cast<int>(this->width); // Int Width
+	int fGid = this->tileset.firstGid;
+	int dataSize = this->data.size();
+	sf::RectangleShape rect(sf::Vector2f(32.f, 32.f));
+
+	int dataPos;
+
 	// Assign the data to the maptiles vector
 	for (unsigned int x = 0; x < this->width; x++) {
 		std::vector<MapTile> maptile;
 
 		for (unsigned int y = 0; y < this->height; y++) {
-			if ((this->data[x * this->width + y] - this->tileset.firstGid) < 0) {
+			dataPos = x * iw + y;
+
+			if (dataSize <= dataPos || (this->data[dataPos] - fGid) < 0) {
 				continue;
 			}
 
@@ -282,7 +327,7 @@ void tmx::Layer::drawRegion(sf::RenderWindow &window, sf::Time deltaTime, sf::Re
 		for (int y = xMin; y < xMax; y++) {
 			int dataPos = x * iw + y;
 
-			if (dataSize < dataPos || (this->data[x * iw + y] - fGid) < 0) {
+			if (dataSize <= dataPos || (this->data[dataPos] - fGid) < 0) {
 				continue;
 			}
 

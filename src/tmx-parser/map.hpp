@@ -3,6 +3,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <tinyxml2.h>
 #include <vector>

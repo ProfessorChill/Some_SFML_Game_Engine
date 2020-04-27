@@ -21,7 +21,8 @@ CXXFLAGS	:= -Wall \
 			   -Wno-variadic-macros \
 			   -Wzero-as-null-pointer-constant \
 			   -std=c++17 \
-			   -g -O3
+			   -g -O0
+
 LDLIBS		:= -lsfml-graphics \
 			   -lsfml-audio \
 			   -lsfml-window \
