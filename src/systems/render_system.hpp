@@ -6,6 +6,8 @@
 #include "../ecs.hpp"
 #include "../game.hpp"
 
+#include "../tmx-parser/map.hpp"
+
 #include "../components/renderable.hpp"
 #include "../components/transform.hpp"
 
@@ -18,7 +20,7 @@ public:
 		mGame = game;
 	}
 
-	void update()
+	void draw(tmx::Map *map, sf::Time time, sf::Rect<float> region)
 	{
 		// I have no clue what a better way to sort sets would be.
 		std::set<ecs::Entity, EntityComparator> srtd(
@@ -26,6 +28,8 @@ public:
 		for (auto &entity : mEntities) {
 			srtd.insert(entity);
 		}
+
+		map->drawRegion(mGame->window, time, region);
 
 		// Draw the sorted set.
 		for (auto const &entity : srtd) {
@@ -37,6 +41,8 @@ public:
 			rect.setPosition(transform.position);
 			rect.setFillColor(renderable.color);
 			mGame->window.draw(rect);
+
+			map->drawPosition(mGame->window, time, transform);
 		}
 	}
 

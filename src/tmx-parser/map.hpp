@@ -11,6 +11,8 @@
 #include "object-group.hpp"
 #include "tileset.hpp"
 
+#include "../components/transform.hpp"
+
 namespace tmx
 {
 class Map
@@ -35,6 +37,8 @@ public:
 	std::vector<ObjectGroup> objectGroups;
 
 	void draw(sf::RenderWindow &window, sf::Time deltaTime);
+	void drawPosition(sf::RenderWindow &window, sf::Time deltaTime, const Transform &entityPos);
+	void drawRegion(sf::RenderWindow &window, sf::Time deltaTime, sf::Rect<float> region);
 	void update(sf::Time deltaTime);
 };
 } // namespace tmx

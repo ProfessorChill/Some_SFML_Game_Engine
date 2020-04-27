@@ -99,7 +99,7 @@ public:
 		});
 		mCoordinator.addComponent(entity, Renderable{
 			.color = sf::Color::White,
-			.size = sf::Vector2f(50.0f, 50.0f),
+			.size = sf::Vector2f(32.0f, 32.0f),
 		});
 		mCoordinator.addComponent(entity, MovementNew{
 			.up = false,
@@ -125,7 +125,7 @@ public:
 		});
 		mCoordinator.addComponent(entityTwo, Renderable{
 			.color = sf::Color::Red,
-			.size = sf::Vector2f(25.0f, 25.0f),
+			.size = sf::Vector2f(32.0f, 32.0f),
 		});
 		mCoordinator.addComponent(entityTwo, RigidBody{
 			.velocity = sf::Vector2f(0.0f, 0.0f),
@@ -144,10 +144,14 @@ public:
 		this->game->window.clear(sf::Color::Black);
 		this->game->window.setView(this->mGameView);
 
-		this->map.draw(this->game->window, sf::Clock().restart());
+		sf::Vector2f viewportTopLeft = this->game->window.mapPixelToCoords(
+		    sf::Vector2i(0, 0), this->game->window.getView());
+		sf::Vector2f viewportSize = this->game->window.getView().getSize();
+		sf::Rect<float> viewport(viewportTopLeft, viewportSize);
 
 		// Updating the render system draws it.
-		mRenderSystem->update();
+		// We pass the map so we can draw/sort the map as well.
+		mRenderSystem->draw(&this->map, sf::Clock().restart(), viewport);
 	}
 
 	virtual void update(const sf::Time deltaTime)

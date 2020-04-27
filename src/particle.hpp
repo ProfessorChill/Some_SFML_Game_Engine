@@ -17,8 +17,7 @@ struct Particle : public sf::Drawable {
 	sf::Vertex drawVertex;
 	sf::Vector2f vel;
 
-	virtual void draw(sf::RenderTarget &target,
-			  sf::RenderStates states) const
+	virtual void draw(sf::RenderTarget &target, sf::RenderStates states) const
 	{
 		target.draw(&drawVertex, 1, sf::Points, states);
 	}
@@ -26,29 +25,44 @@ struct Particle : public sf::Drawable {
 
 class ParticleSystem : public sf::Drawable
 {
-    public:
+public:
 	ParticleSystem(sf::Vector2u canvasSize);
 	~ParticleSystem();
 
-	const int getDissolutionRate() const { return this->dissolutionRate; }
+	int getDissolutionRate() const
+	{
+		return this->dissolutionRate;
+	}
 
-	const int getNumberOfParticles() const
+	int getNumberOfParticles() const
 	{
 		return this->particles.size();
 	}
 
-	const float getParticleSpeed() const { return this->particleSpeed; }
-	const std::string getNumberOfParticlesString() const;
+	float getParticleSpeed() const
+	{
+		return this->particleSpeed;
+	}
+	std::string getNumberOfParticlesString() const;
 
-	void setCanvasSize(sf::Vector2f newSize) { this->canvasSize = newSize; }
+	void setCanvasSize(sf::Vector2f newSize)
+	{
+		this->canvasSize = newSize;
+	}
 
 	void setDissolutionRate(sf::Uint8 rate)
 	{
 		this->dissolutionRate = rate;
 	}
 
-	void setDissolve() { this->dissolve = !this->dissolve; }
-	void setDistibution() { this->shape = (this->shape + 1) % 2; }
+	void setDissolve()
+	{
+		this->dissolve = !this->dissolve;
+	}
+	void setDistibution()
+	{
+		this->shape = (this->shape + 1) % 2;
+	}
 
 	void setGravity(float x, float y)
 	{
@@ -56,8 +70,14 @@ class ParticleSystem : public sf::Drawable
 		this->gravity.y = y;
 	}
 
-	void setGravity(sf::Vector2f gravity) { this->gravity = gravity; }
-	void setParticleSpeed(float speed) { this->particleSpeed = speed; }
+	void setGravity(sf::Vector2f gravity)
+	{
+		this->gravity = gravity;
+	}
+	void setParticleSpeed(float speed)
+	{
+		this->particleSpeed = speed;
+	}
 
 	void setPosition(float x, float y)
 	{
@@ -65,16 +85,21 @@ class ParticleSystem : public sf::Drawable
 		this->startPos.y = y;
 	}
 
-	void setPosition(sf::Vector2f position) { this->startPos = position; }
-	void setShape(sf::Uint8 shape) { this->shape = shape; }
+	void setPosition(sf::Vector2f position)
+	{
+		this->startPos = position;
+	}
+	void setShape(sf::Uint8 shape)
+	{
+		this->shape = shape;
+	}
 
-	virtual void draw(sf::RenderTarget &target,
-			  sf::RenderStates states) const;
+	virtual void draw(sf::RenderTarget &target, sf::RenderStates states) const;
 
 	void fuel(int particles);
 	void update(float dt);
 
-    private:
+private:
 	bool dissolve;
 	float particleSpeed;
 

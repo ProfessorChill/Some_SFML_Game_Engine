@@ -15,7 +15,13 @@ DEPEXT		:= d
 OBJEXT		:= o
 
 # Flags, Libraries and Includes
-CXXFLAGS	:= -Wall -std=c++17 -g -O0
+CXXFLAGS	:= -Wall \
+			   -Wextra \
+			   -Wno-long-long \
+			   -Wno-variadic-macros \
+			   -Wzero-as-null-pointer-constant \
+			   -std=c++17 \
+			   -g -O3
 LDLIBS		:= -lsfml-graphics \
 			   -lsfml-audio \
 			   -lsfml-window \
@@ -23,8 +29,7 @@ LDLIBS		:= -lsfml-graphics \
 			   -llua \
 			   -ltinyxml2 \
 			   -lpthread \
-			   -lboost_filesystem \
-			   -lBox2D
+			   -lboost_filesystem
 
 INC			:= -I$(INCDIR) -I/usr/local/include
 INCDEP		:= -I$(INCDIR)

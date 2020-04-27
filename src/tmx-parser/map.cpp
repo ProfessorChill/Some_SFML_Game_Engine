@@ -42,16 +42,31 @@ tmx::Map::Map(const std::string &basePath, const std::string &filename)
 		objectGroupElement = objectGroupElement->NextSiblingElement("objectgroup");
 	}
 
-	for (size_t x = 0; x < this->layers.size(); ++x) {
-		this->layers[x].sprite = sf::Sprite(this->tilesets[0].texture);
-		this->layers[x].tileset = this->tilesets[0];
-		this->layers[x].init(); // Called after tiles and sprites are set.
+	for (Layer &layer : this->layers) {
+		layer.sprite = sf::Sprite(this->tilesets[0].texture);
+		layer.tileset = this->tilesets[0];
+		layer.init(); // Called after tiles and sprites are set.
 	}
 }
 
 void tmx::Map::draw(sf::RenderWindow &window, sf::Time deltaTime)
 {
-	for (size_t x = 0; x < this->layers.size(); ++x) {
-		this->layers[x].draw(window, deltaTime);
+	for (Layer &layer : this->layers) {
+		layer.draw(window, deltaTime);
+	}
+}
+
+void tmx::Map::drawPosition(sf::RenderWindow &window, sf::Time deltaTime,
+			    const Transform &entityPos)
+{
+	for (Layer &layer : this->layers) {
+		layer.drawPosition(window, deltaTime, entityPos);
+	}
+}
+
+void tmx::Map::drawRegion(sf::RenderWindow &window, sf::Time deltaTime, sf::Rect<float> region)
+{
+	for (Layer &layer : this->layers) {
+		layer.drawRegion(window, deltaTime, region);
 	}
 }

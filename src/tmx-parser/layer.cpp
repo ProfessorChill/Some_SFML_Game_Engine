@@ -16,6 +16,9 @@ tmx::Layer::Layer(tinyxml2::XMLElement *layerElement)
 	// If true, all objects on the layer will block physics objects.
 	isBlocking = false;
 
+	// If true, render over entities
+	isOverlay = false;
+
 	if (data->Attribute("compression") != nullptr) {
 		dataCompression = data->Attribute("compression");
 	}
@@ -44,10 +47,11 @@ tmx::Layer::Layer(tinyxml2::XMLElement *layerElement)
 		std::string propName = pListElement->Attribute("name");
 
 		if (propName.compare("isBlocking") == 0) {
-			std::string propValue = pListElement->Attribute("value");
-			if (propValue.compare("true") == 0) {
-				isBlocking = true;
-			}
+			pListElement->QueryBoolAttribute("value", &isBlocking);
+		}
+
+		if (propName.compare("isOverlay") == 0) {
+			pListElement->QueryBoolAttribute("value", &isOverlay);
 		}
 	}
 
@@ -100,31 +104,19 @@ tmx::Layer::Layer(tinyxml2::XMLElement *layerElement)
 void tmx::Layer::init()
 {
 	// Assign the data to the maptiles vector
-	unsigned int xPos = 0;
-	unsigned int yPos = 0;
-
 	for (unsigned int x = 0; x < this->width; x++) {
 		std::vector<MapTile> maptile;
 
 		for (unsigned int y = 0; y < this->height; y++) {
-			if (xPos >= this->width * this->tileset.tileWidth) {
-				yPos += this->tileset.tileHeight;
-				xPos = 0;
-			}
-
 			if ((this->data[x * this->width + y] - this->tileset.firstGid) < 0) {
-				xPos += this->tileset.tileWidth;
-
 				continue;
 			}
 
 			maptile.push_back(MapTile{
-			    .x = xPos,
-			    .y = yPos,
+			    .x = y * this->tileset.tileWidth,
+			    .y = x * this->tileset.tileHeight,
 			    .isBlocking = isBlocking,
 			});
-
-			xPos += this->tileset.tileWidth;
 		}
 
 		tiles.push_back(maptile);
@@ -133,33 +125,174 @@ void tmx::Layer::init()
 
 void tmx::Layer::draw(sf::RenderWindow &window, sf::Time deltaTime)
 {
-	unsigned int xPos = 0;
-	unsigned int yPos = 0;
-
 	for (unsigned int x = 0; x < this->width; x++) {
 		for (unsigned int y = 0; y < this->height; y++) {
-			if (xPos >= this->width * this->tileset.tileWidth) {
-				yPos += this->tileset.tileHeight;
-				xPos = 0;
-			}
-
 			if ((this->data[x * this->width + y] - this->tileset.firstGid) < 0) {
-				xPos += this->tileset.tileWidth;
-
 				continue;
 			}
 
-			this->sprite.setTextureRect(sf::IntRect(
-			    ((this->data[x * this->width + y] - this->tileset.firstGid) %
-			     this->tileset.columns) *
-				this->tileset.tileWidth,
-			    ((this->data[x * this->width + y] - this->tileset.firstGid) /
-			     this->tileset.columns) *
-				this->tileset.tileHeight,
-			    this->tileset.tileWidth, this->tileset.tileHeight));
-			this->sprite.setPosition(sf::Vector2f(xPos, yPos));
+			this->sprite.setTextureRect(entityPosToTextureRect(x, y));
+			// clang-format off
+			this->sprite.setPosition(
+				(y * this->tileset.tileWidth),
+				(x * this->tileset.tileHeight)
+			);
+			// clang-format on
 
-			xPos += this->tileset.tileWidth;
+			window.draw(this->sprite);
+		}
+	}
+}
+
+void tmx::Layer::drawPosition(sf::RenderWindow &window, sf::Time deltaTime,
+			      const Transform &entityPos)
+{
+	if (!this->isOverlay) {
+		return;
+	}
+
+	int entityXPos =
+	    static_cast<int>(std::floor(entityPos.position.x) / this->tileset.tileWidth);
+	int entityYPos =
+	    static_cast<int>(std::floor(entityPos.position.y) / this->tileset.tileHeight);
+
+	int iw = static_cast<int>(this->width);	 // Int Width
+	int ih = static_cast<int>(this->height); // Int Height
+
+	// Out of bounds check.
+	if (entityXPos < 0 || entityXPos > iw || entityYPos < 0 || entityYPos > ih) {
+		return;
+	}
+
+	// There is a better way to do this in a for loop, I'm just lazy so I'm doing it manually.
+	// It's that contradictory?
+
+	// Store firstGid in shorthand to prevent compression.
+	int fGid = this->tileset.firstGid;
+	int dataSize = this->data.size();
+	sf::RectangleShape rect(sf::Vector2f(32.f, 32.f));
+
+	// Same position as entity
+	int dataPos = entityYPos * iw + entityXPos;
+	if (dataSize >= dataPos && this->data[dataPos] - fGid >= 0) {
+		this->sprite.setTextureRect(entityPosToTextureRect(entityYPos, entityXPos));
+		this->sprite.setPosition(entityXPos * this->tileset.tileWidth,
+					 entityYPos * this->tileset.tileHeight);
+
+		window.draw(this->sprite);
+	}
+
+	// Below of entity
+	dataPos = (entityYPos + 1) * iw + entityXPos;
+	if (dataSize >= dataPos && this->data[dataPos] - fGid >= 0) {
+		this->sprite.setTextureRect(entityPosToTextureRect(entityYPos + 1, entityXPos));
+		this->sprite.setPosition(entityXPos * this->tileset.tileWidth,
+					 (entityYPos + 1) * this->tileset.tileHeight);
+
+		window.draw(this->sprite);
+	}
+
+	// Above the entity
+	dataPos = (entityYPos - 1) * iw + entityXPos;
+	if (dataSize >= dataPos && this->data[dataPos] - fGid >= 0) {
+		this->sprite.setTextureRect(entityPosToTextureRect(entityYPos - 1, entityXPos));
+		this->sprite.setPosition(entityXPos * this->tileset.tileWidth,
+					 (entityYPos - 1) * this->tileset.tileHeight);
+
+		window.draw(this->sprite);
+	}
+
+	// Right of entity
+	dataPos = entityYPos * iw + (entityXPos + 1);
+	if (dataSize >= dataPos && this->data[dataPos] - fGid >= 0) {
+		this->sprite.setTextureRect(entityPosToTextureRect(entityYPos, entityXPos + 1));
+		this->sprite.setPosition((entityXPos + 1) * this->tileset.tileWidth,
+					 entityYPos * this->tileset.tileHeight);
+
+		window.draw(this->sprite);
+	}
+
+	// Left of entity
+	dataPos = entityYPos * iw + (entityXPos - 1);
+	if (dataSize >= dataPos && this->data[dataPos] - fGid >= 0) {
+		this->sprite.setTextureRect(entityPosToTextureRect(entityYPos, entityXPos - 1));
+		this->sprite.setPosition((entityXPos - 1) * this->tileset.tileWidth,
+					 entityYPos * this->tileset.tileHeight);
+
+		window.draw(this->sprite);
+	}
+
+	// Top left of entity
+	dataPos = (entityYPos - 1) * iw + (entityXPos - 1);
+	if (dataSize >= dataPos && this->data[dataPos] - fGid >= 0) {
+		this->sprite.setTextureRect(entityPosToTextureRect(entityYPos - 1, entityXPos - 1));
+		this->sprite.setPosition((entityXPos - 1) * this->tileset.tileWidth,
+					 (entityYPos - 1) * this->tileset.tileHeight);
+
+		window.draw(this->sprite);
+	}
+
+	// Top right of entity
+	dataPos = (entityYPos - 1) * iw + (entityXPos + 1);
+	if (dataSize >= dataPos && this->data[dataPos] - fGid >= 0) {
+		this->sprite.setTextureRect(entityPosToTextureRect(entityYPos - 1, entityXPos + 1));
+		this->sprite.setPosition((entityXPos + 1) * this->tileset.tileWidth,
+					 (entityYPos - 1) * this->tileset.tileHeight);
+
+		window.draw(this->sprite);
+	}
+
+	// Bottom left of entity
+	dataPos = (entityYPos + 1) * iw + (entityXPos - 1);
+	if (dataSize >= dataPos && this->data[dataPos] - fGid >= 0) {
+		this->sprite.setTextureRect(entityPosToTextureRect(entityYPos + 1, entityXPos - 1));
+		this->sprite.setPosition((entityXPos - 1) * this->tileset.tileWidth,
+					 (entityYPos + 1) * this->tileset.tileHeight);
+
+		window.draw(this->sprite);
+	}
+
+	// Bottom right of entity
+	dataPos = (entityYPos + 1) * iw + (entityXPos + 1);
+	if (dataSize >= (dataPos) && this->data[dataPos] - fGid >= 0) {
+		this->sprite.setTextureRect(entityPosToTextureRect(entityYPos + 1, entityXPos + 1));
+		this->sprite.setPosition((entityXPos + 1) * this->tileset.tileWidth,
+					 (entityYPos + 1) * this->tileset.tileHeight);
+
+		window.draw(this->sprite);
+	}
+}
+
+void tmx::Layer::drawRegion(sf::RenderWindow &window, sf::Time deltaTime, sf::Rect<float> region)
+{
+	// Clamp the regions x and y values to int.
+	int xMin = static_cast<int>(std::floor(region.left / this->tileset.tileWidth));
+	int yMin = static_cast<int>(std::floor(region.top / this->tileset.tileHeight));
+	int xMax =
+	    static_cast<int>(std::ceil((region.left + region.width) / this->tileset.tileWidth));
+	int yMax =
+	    static_cast<int>(std::ceil((region.top + region.height) / this->tileset.tileHeight));
+
+	int dataSize = this->data.size();
+	int fGid = this->tileset.firstGid;
+	int iw = static_cast<int>(this->width); // Int Width
+
+	// I know this is backwards, I initially did the math backwards and never fixed it.
+	for (int x = yMin; x < yMax; x++) {
+		for (int y = xMin; y < xMax; y++) {
+			int dataPos = x * iw + y;
+
+			if (dataSize < dataPos || (this->data[x * iw + y] - fGid) < 0) {
+				continue;
+			}
+
+			this->sprite.setTextureRect(entityPosToTextureRect(x, y));
+			// clang-format off
+			this->sprite.setPosition(
+				(y * this->tileset.tileWidth),
+				(x * this->tileset.tileHeight)
+			);
+			// clang-format on
 
 			window.draw(this->sprite);
 		}
